@@ -5,13 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Relatório de Serviço - Refrigeração Fidelis</title>
-  <link rel="stylesheet" href="dist/tailwind.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#000000',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> -->
+  <script src="js/config.js"></script>
+  <script src="js/toast.js"></script>
 </head>
-<body class="bg-gradient-to-br from-dark-50 to-dark-100 min-h-screen text-dark-900 p-4">
+<body class="bg-gradient-to-br from-dark-50 to-dark-100 min-h-screen text-dark-900 p-4 overflow-x-hidden">
   <!-- Cabeçalho Fixo -->
   <div class="fixed top-0 left-0 right-0 bg-dark-900 p-2 z-50 shadow-lg">
     <div class="max-w-4xl mx-auto flex items-center justify-between">
@@ -49,16 +73,22 @@
     </div>
 
     <!-- Formulário -->
-    <form id="relatorioForm" method="POST" action="https://script.google.com/macros/s/AKfycbzgiYMWbZdCBNItjlAy6AjUz7dZH93oeskExcluWBqqvQ9KAjxhcHAVRHWlYYLxWCuh/exec" class="space-y-4 sm:space-y-6">
+    <form id="relatorioForm" class="space-y-4 sm:space-y-6">
       <!-- Data e Status -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
           <label for="dataServico" class="block text-sm font-medium text-dark-700">Data do Serviço <span class="text-red-500">*</span></label>
-          <input type="date" id="dataServico" name="Data do Serviço" required class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
+          <input type="date" id="dataServico" name="Data do Serviço" required class="mt-1 w-full min-w-0 border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
         </div>
         <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
           <label for="status" class="block text-sm font-medium text-dark-700">Status <span class="text-red-500">*</span></label>
-          <input type="text" id="status" name="Status" required class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
+          <select id="status" name="Status" required class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all">
+            <option value="">Selecione o status</option>
+            <option value="Orçamento">Orçamento</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Outros">Outros</option>
+          </select>
+          <input type="text" id="statusOutro" name="StatusOutro" placeholder="Descreva o status" class="mt-2 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all hidden" />
         </div>
       </div>
 
@@ -74,23 +104,51 @@
         <input type="text" id="tecnicoOutro" name="Técnico" placeholder="Nome do outro técnico" class="mt-2 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all hidden" />
       </div>
 
-      <!-- Cliente -->
+      <!-- Tipo de Pessoa + Cliente -->
+      <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
+        <label class="block text-sm font-medium text-dark-700 mb-2">Tipo de Cliente</label>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="tipoPessoa" id="tipoPJ" value="pj" checked class="accent-dark-700 w-4 h-4" />
+            <span class="text-sm font-medium text-dark-700">Pessoa Jurídica</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="tipoPessoa" id="tipoPF" value="pf" class="accent-dark-700 w-4 h-4" />
+            <span class="text-sm font-medium text-dark-700">Pessoa Física</span>
+          </label>
+        </div>
+      </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
-          <label for="nomeFantasia" class="block text-sm font-medium text-dark-700">Nome Fantasia (Cliente) <span class="text-red-500">*</span></label>
+          <label for="nomeFantasia" id="labelNomeCliente" class="block text-sm font-medium text-dark-700">Nome Fantasia (Cliente) <span class="text-red-500">*</span></label>
           <input type="text" id="nomeFantasia" name="Nome Fantasia" required class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
         </div>
-        <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
-          <label for="cnpjCliente" class="block text-sm font-medium text-dark-700">CNPJ (Cliente) <span class="text-red-500">*</span></label>
-          <input type="text" id="cnpjCliente" name="CNPJ do Cliente" required class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
+        <div id="campoCNPJ" class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
+          <label for="cnpjCliente" class="block text-sm font-medium text-dark-700">CNPJ (Cliente)</label>
+          <input type="text" id="cnpjCliente" name="CNPJ do Cliente" class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
+        </div>
+        <div id="campoCPF" class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200 hidden">
+          <label for="cpfCliente" class="block text-sm font-medium text-dark-700">CPF (Cliente)</label>
+          <input type="text" id="cpfCliente" name="CPF do Cliente" class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
         </div>
       </div>
 
-      <!-- Equipamento e Defeito -->
-      <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
-        <label for="equipamento" class="block text-sm font-medium text-dark-700">Equipamentos Atendidos</label>
-        <input type="text" id="equipamento" name="Equipamentos" class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" />
+      <div id="campoNomeSolicitante" class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
+        <label for="nomeSolicitante" class="block text-sm font-medium text-dark-700">Nome do Solicitante</label>
+        <input type="text" id="nomeSolicitante" name="Nome do Solicitante" class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all" placeholder="Nome do responsável/solicitante" />
       </div>
+
+      <!-- Equipamentos Dinâmicos -->
+      <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
+        <h3 class="text-lg font-medium text-dark-800 mb-3">Equipamentos Atendidos</h3>
+        <div id="equipamentosContainer" class="space-y-3"></div>
+        <button type="button" id="adicionarEquipamentoBtn" class="mt-4 flex items-center gap-2 text-sm font-semibold text-dark-700 hover:text-dark-900 transition-colors">
+          <svg class="w-5 h-5 bg-green-500 text-white rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+          Adicionar Equipamento
+        </button>
+      </div>
+
+      <!-- Defeito -->
       <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
         <label for="defeito" class="block text-sm font-medium text-dark-700">Defeito Relatado</label>
         <textarea id="defeito" name="Defeito" rows="3" class="mt-1 w-full border-dark-200 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all"></textarea>
@@ -154,7 +212,23 @@
           <button type="button" onclick="limparAssinatura('cliente')" class="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
             Limpar Assinatura
           </button>
+          <div class="mt-3">
+            <label for="nomeAssinanteCliente" class="block text-sm font-medium text-dark-700">Nome Completo</label>
+            <input type="text" id="nomeAssinanteCliente" placeholder="Nome completo do assinante" class="mt-1 w-full border border-dark-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-dark-400 focus:border-dark-400 transition-all bg-white" />
+          </div>
         </div>
+      </div>
+
+      <!-- Fotos do Serviço -->
+      <div class="bg-dark-50 p-3 sm:p-4 rounded-lg border border-dark-200">
+        <h3 class="text-lg font-medium text-dark-800 mb-1">Fotos do Serviço</h3>
+        <p class="text-xs text-dark-500 mb-3">Adicione quantas fotos quiser. Elas serão incluídas no PDF gerado.</p>
+        <label for="inputFotos" class="inline-flex items-center gap-2 cursor-pointer px-4 py-2 bg-dark-700 text-white rounded-lg hover:bg-dark-900 transition-colors text-sm font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Adicionar Fotos
+        </label>
+        <input type="file" id="inputFotos" accept="image/*" multiple class="hidden" />
+        <div id="previewFotos" class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
       </div>
 
       <!-- Opções do PDF -->
@@ -183,19 +257,12 @@
 
       <!-- Botões -->
       <div class="space-y-4 mt-6 sm:mt-8">
-        <div class="flex flex-row gap-4">
-          <button type="button" id="gerarPDF" class="flex-1 bg-dark-700 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-dark-900 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            Gerar PDF
-          </button>
-          <button type="submit" class="flex-1 bg-green-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-green-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            Salvar
-          </button>
-        </div>
-        <div>
-          <button type="button" id="limparFormulario" class="w-full bg-red-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            Limpar Formulário
-          </button>
-        </div>
+        <button type="button" id="gerarPDF" class="w-full bg-dark-700 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-dark-900 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+          Gerar PDF
+        </button>
+        <button type="button" id="limparFormulario" class="w-full bg-red-600 text-white px-6 sm:px-8 py-3 rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+          Limpar Formulário
+        </button>
       </div>
     </form>
   </div>
@@ -229,11 +296,102 @@
     });
   </script>
 
+  <!-- Gerenciamento de Fotos -->
+  <script>
+    window.imagensServico = [];
+    window._fotoIdCounter = 0;
+
+    function removerFoto(id) {
+      window.imagensServico = window.imagensServico.filter(function(img) { return img.id !== id; });
+      var el = document.querySelector('[data-img-id="' + id + '"]');
+      if (el) el.remove();
+      if (typeof window.salvarDados === 'function') window.salvarDados();
+    }
+
+    function setFotoTipo(id, tipo) {
+      window.imagensServico = window.imagensServico.map(function(img) {
+        if (img.id !== id) return img;
+        return Object.assign({}, img, { tipo: tipo });
+      });
+      var div = document.querySelector('[data-img-id="' + id + '"]');
+      if (!div) return;
+      var btnAntes = div.querySelector('.foto-btn-antes');
+      var btnDepois = div.querySelector('.foto-btn-depois');
+      if (tipo === 'antes') {
+        btnAntes.className = 'foto-btn-antes flex-1 text-xs py-1 rounded font-semibold bg-blue-500 text-white transition-colors';
+        btnDepois.className = 'foto-btn-depois flex-1 text-xs py-1 rounded font-semibold bg-gray-200 text-gray-600 transition-colors';
+      } else {
+        btnAntes.className = 'foto-btn-antes flex-1 text-xs py-1 rounded font-semibold bg-gray-200 text-gray-600 transition-colors';
+        btnDepois.className = 'foto-btn-depois flex-1 text-xs py-1 rounded font-semibold bg-orange-500 text-white transition-colors';
+      }
+      if (typeof window.salvarDados === 'function') window.salvarDados();
+    }
+
+    window.criarPreviewFoto = function(id, dataUrl, tipo) {
+      var previewFotos = document.getElementById('previewFotos');
+      if (!previewFotos) return;
+      var div = document.createElement('div');
+      div.className = 'relative overflow-hidden rounded-lg border border-dark-200 bg-gray-100';
+      div.dataset.imgId = id;
+      div.innerHTML =
+        '<img src="' + dataUrl + '" class="w-full h-24 object-cover" />' +
+        '<button type="button" onclick="removerFoto(' + id + ')" title="Remover foto" ' +
+        'class="absolute top-1.5 right-1.5 bg-black/50 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-150 shadow">' +
+        '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
+        '</button>' +
+        '<div class="flex gap-1 p-1.5">' +
+        '<button type="button" onclick="setFotoTipo(' + id + ', \'antes\')" ' +
+        'class="foto-btn-antes flex-1 text-xs py-1 rounded font-semibold bg-blue-500 text-white transition-colors">Antes</button>' +
+        '<button type="button" onclick="setFotoTipo(' + id + ', \'depois\')" ' +
+        'class="foto-btn-depois flex-1 text-xs py-1 rounded font-semibold bg-gray-200 text-gray-600 transition-colors">Depois</button>' +
+        '</div>';
+      previewFotos.appendChild(div);
+      if (tipo === 'depois') setFotoTipo(id, 'depois');
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var inputFotos = document.getElementById('inputFotos');
+
+      function comprimirImagem(dataUrl, callback) {
+        var img = new Image();
+        img.onload = function() {
+          var MAX = 1400;
+          var w = img.naturalWidth, h = img.naturalHeight;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', 0.80));
+        };
+        img.src = dataUrl;
+      }
+
+      inputFotos.addEventListener('change', function(e) {
+        var files = Array.from(e.target.files);
+        files.forEach(function(file) {
+          if (!file.type.startsWith('image/')) return;
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            comprimirImagem(ev.target.result, function(dataUrl) {
+              var id = ++window._fotoIdCounter;
+              window.imagensServico.push({ id: id, dataUrl: dataUrl, tipo: 'antes' });
+              window.criarPreviewFoto(id, dataUrl, 'antes');
+              if (typeof window.salvarDados === 'function') window.salvarDados();
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+        e.target.value = '';
+      });
+    });
+  </script>
+
   <!-- Scripts -->
   <script src="js/assinatura.js"></script>
   <script type="module" src="js/main.js"></script>
   <script type="module" src="js/gerarPDF.js"></script>
-  <script src="js/toast-form.js"></script>
+  <script src="js/preencher-teste.js"></script>
 
   <!-- Modal de Confirmação de Limpeza -->
   <div id="confirmacaoModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
